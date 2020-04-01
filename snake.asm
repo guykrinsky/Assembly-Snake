@@ -19,7 +19,8 @@ num_of_sqare db 1
 
 current_direction db RIGHT_DIRECTION
 
-position_history dw 200 dup(0)
+SIZE_OF_HISTORY_POS equ 280
+position_history dw SIZE_OF_HISTORY_POS dup(0)
 
 lost db FALSE
 
@@ -30,6 +31,7 @@ ther_is_apple db THERE_ISNT_APPLE
 ; Define new Point object: Point(x, y)
 ; x_position first 2 bytes.
 ; y_position seend_proc_mov_on_same_directiond 2 bytes.
+
 POINT_OBJECT_SIZE equ 4 
 
 W_KEYBOARD equ 17
@@ -58,9 +60,8 @@ next_place_in_arr dw POINT_OBJECT_SIZE
 
 next_square_color db 0
 
-apple_counter db 0
+apple_counter db 0 
 
-SIZE_OF_HISTORY_POS equ 200
 
 BLACK equ 0000b
 WHITE equ 1111b
@@ -198,15 +199,15 @@ mov al,POINT_OBJECT_SIZE
 mov bl,[num_of_sqare]
 mul bl
 cmp ax,cx
-jg nun_ofsquare_biger_then_next_place_inr_arr
+jg num_of_square_bigger_then_next_place_in_arr
 sub cx,ax
 
-jmp skip_nun_ofsquare_biger_then_next_place_inr_arr
-nun_ofsquare_biger_then_next_place_inr_arr:
+jmp skip_num_of_square_bigger_then_next_place_in_arr
+num_of_square_bigger_then_next_place_in_arr:
 sub ax,cx
 mov cx,SIZE_OF_HISTORY_POS
 sub cx,ax
-skip_nun_ofsquare_biger_then_next_place_inr_arr:
+skip_num_of_square_bigger_then_next_place_in_arr:
 mov si,cx
 mov bx,offset position_history
 mov ax,[bx+si]
