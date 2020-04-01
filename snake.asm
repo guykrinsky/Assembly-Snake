@@ -325,6 +325,7 @@ fast_apple:
 mov [color],YELLOW
 mov [apple_counter],0
 skip_change_color:
+;call check_x_and_y_start_pos
 call print_square
 
 
@@ -350,13 +351,10 @@ mov ax,dx
 mov cx,[line_lengt]
 div cl
 sub dl,ah
+mov dh,0
 add dx,50
 
 mov [x_start_pos],dx
-cmp [x_start_pos],6
-jg end_proc_random_x_pos
-add [x_start_pos],10
-
 end_proc_random_x_pos:
 
 ret
@@ -370,16 +368,31 @@ mov ax,dx
 mov cx,[highet]
 div cl
 sub dl,ah
-add dx,HIGHET_OF_SQUARE
-cmp dl,120
-jl end_proc_random_y_pos
-sub dl,60
-end_proc_random_y_pos:
-
+add dx,25
+mov dh,0
 	mov [y_start_pos],dx
 	ret
 	endp random_y_pos
 
+proc check_x_and_y_start_pos
+cmp [x_start_pos],5
+jg skip_x_to_low
+mov [x_start_pos],10
+skip_x_to_low:
+cmp [x_start_pos],305
+jl skip_x_to_high
+mov [x_start_pos],300
+skip_x_to_high:
+cmp [y_start_pos],5
+jg skip_y_to_low
+mov [y_start_pos],10
+skip_y_to_low:
+cmp [y_start_pos],190
+jg skip_y_to_high
+mov [y_start_pos],185
+skip_y_to_high:
+ret
+endp check_x_and_y_start_pos
 
 
 proc set_next_square_color
