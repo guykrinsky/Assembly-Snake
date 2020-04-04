@@ -325,7 +325,7 @@ fast_apple:
 mov [color],YELLOW
 mov [apple_counter],0
 skip_change_color:
-;call check_x_and_y_start_pos
+call check_x_and_y_start_pos
 call print_square
 
 
@@ -379,16 +379,16 @@ cmp [x_start_pos],5
 jg skip_x_to_low
 mov [x_start_pos],10
 skip_x_to_low:
-cmp [x_start_pos],305
+cmp [x_start_pos],300
 jl skip_x_to_high
-mov [x_start_pos],300
+mov [x_start_pos],270
 skip_x_to_high:
 cmp [y_start_pos],5
 jg skip_y_to_low
 mov [y_start_pos],10
 skip_y_to_low:
 cmp [y_start_pos],190
-jg skip_y_to_high
+jl skip_y_to_high
 mov [y_start_pos],185
 skip_y_to_high:
 ret
