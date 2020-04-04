@@ -19,8 +19,10 @@ num_of_sqare db 1
 
 current_direction db RIGHT_DIRECTION
 
-SIZE_OF_HISTORY_POS equ 280
+SIZE_OF_HISTORY_POS equ 280 
 position_history dw SIZE_OF_HISTORY_POS dup(0)
+
+music_sounds dw 11EDh,0FE8h,0E2Bh,0D5Bh,0BE4h,0A98h,96Fh,8E5h
 
 lost db FALSE
 
@@ -394,6 +396,25 @@ skip_y_to_high:
 ret
 endp check_x_and_y_start_pos
 
+proc  play_music_sounds ;--- paramater in si
+	mov ax, [offset music_sounds+si]	
+	out 42h,al
+	mov al,ah
+	out 42h,al
+	mov al,61h
+	mov al,11b
+	out 61h,al
+	call sleep
+	call stop_playing_nusic
+ret
+endp play_music_sounds
+
+proc stop_playing_nusic
+mov al,61h				
+out 61h,al
+ret
+endp stop_playing_nusic
+
 
 proc set_next_square_color
 mov bh,0
@@ -427,12 +448,16 @@ eat_apple:
 mov [ther_is_apple],THERE_ISNT_APPLE
 call add_square
 mov [sleep_time],REGULAR_SLEEP_TIME
+mov si,0
+call play_music_sounds
 jmp end_proc_check_next_square_color
 
 set_fast_apple:
 mov [sleep_time],FAST_SLEEP_TIME
 mov [ther_is_apple],THERE_ISNT_APPLE
 call add_square
+mov si,1
+call play_music_sounds
 jmp end_proc_check_next_square_color
 
 tripple_sqare_apple:
@@ -441,6 +466,8 @@ call add_square
 call add_square
 call add_square
 mov [sleep_time],REGULAR_SLEEP_TIME
+mov si,2
+call play_music_sounds
 jmp end_proc_check_next_square_color
 
 loosing:
