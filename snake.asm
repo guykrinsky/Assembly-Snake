@@ -597,6 +597,35 @@ int 21h
 ret
 endp open_scrin
 
+
+proc return_to_text_mode
+mov ah, 0
+mov al, 2
+int 10h
+ret
+endp return_to_text_mode
+
+proc end_screen
+call return_to_text_mode
+mov ah,0
+mov al,[num_of_sqare]
+mov cl,10
+div cl
+mov dl ,al
+push ax
+add dl,30h
+mov ah, 2h
+int 21h
+pop ax
+mov dl ,ah
+push ax
+add dl,30h
+mov ah, 2h
+int 21h
+pop ax
+ret
+endp end_screen
+
 START:
 
 mov ax,@data
@@ -611,8 +640,7 @@ call to_start
 
 call generate_apple
 call moov
-call random_y_pos
-
+call end_screen
 exit:
 mov ax,4c00h
 int 21h
