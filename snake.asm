@@ -30,7 +30,7 @@ sleep_time dw REGULAR_SLEEP_TIME
 
 ther_is_apple db THERE_ISNT_APPLE
 
-
+end_massage db "GG your score is $"
 
 ; Define new Point object: Point(x, y)
 ; x_position first 2 bytes.
@@ -471,7 +471,7 @@ call eat_fast_apple
 jmp end_proc_check_next_square_color
 
 tripple_sqare_apple:
-call eat_fast_apple
+call eat_tripple_sqare_apple
 jmp end_proc_check_next_square_color
 
 loosing:
@@ -687,7 +687,16 @@ ret
 endp return_to_text_mode
 
 proc end_screen
+mov si,4
+call play_music_sounds
 call return_to_text_mode
+mov al,0
+call mov_to_the_middle_of_the_screen
+ MOV DX, OFFSET end_massage
+ MOV AH, 9H
+ INT 21H 
+ mov al,1
+call mov_to_the_middle_of_the_screen
 mov ah,0
 mov al,[num_of_sqare]
 mov cl,10
@@ -704,8 +713,34 @@ add dl,30h
 mov ah, 2h
 int 21h
 pop ax
+;carriage return
+mov dl, 10
+mov ah,2
+int 21h
+;new line
+mov dl, 13
+mov ah,2
+int 21h
+;get input from user to start
+mov ah, 1h
+int 21h
+
+
 ret
 endp end_screen
+
+
+proc mov_to_the_middle_of_the_screen;----al is parmater wiche line to you want
+; Set cursor location to (11, 33)
+ MOV BH, 0
+ MOV DH, 11
+ add dh,al
+ MOV DL, 33
+ MOV AH, 2H
+ INT 10H 
+ ret
+ endp mov_to_the_middle_of_the_screen
+
 
 START:
 
