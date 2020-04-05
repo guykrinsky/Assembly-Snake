@@ -309,7 +309,7 @@ endp to_start
 
 proc generate_apple
 mov al,[ther_is_apple]
-cmp aL,THERE_IS_APPLE
+cmp al,THERE_IS_APPLE
 je end_proc_generate_apple
 
 push [x_start_pos]
@@ -337,6 +337,7 @@ jmp skip_change_color
 fast_apple:
 mov [color],YELLOW
 mov [apple_counter],0
+
 skip_change_color:
 call check_x_and_y_start_pos
 call print_square
@@ -383,9 +384,9 @@ div cl
 sub dl,ah
 add dx,25
 mov dh,0
-	mov [y_start_pos],dx
-	ret
-	endp random_y_pos
+mov [y_start_pos],dx
+ret
+endp random_y_pos
 
 proc check_x_and_y_start_pos
 cmp [x_start_pos],5
@@ -408,15 +409,16 @@ ret
 endp check_x_and_y_start_pos
 
 proc  play_music_sounds ;--- paramater in si
-	mov ax, [offset music_sounds+si]	
-	out 42h,al
-	mov al,ah
-	out 42h,al
-	mov al,61h
-	mov al,11b
-	out 61h,al
-	call sleep
-	call stop_playing_nusic
+mov ax, [offset music_sounds+si]	
+out 42h,al
+mov al,ah
+out 42h,al
+mov al,61h
+mov al,11b
+out 61h,al
+; caling sleep otherwise you cant hear sound
+call sleep
+call stop_playing_nusic
 ret
 endp play_music_sounds
 
@@ -756,6 +758,7 @@ call to_start
 
 call generate_apple
 call moov
+
 call end_screen
 exit:
 mov ax,4c00h
