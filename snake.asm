@@ -1,4 +1,4 @@
-IDEAL
+IDEAL 
 MODEL small
 STACK 100h
 DATASEG
@@ -17,7 +17,7 @@ line_lengt dw LINE_LENGTH
 highet dw HIGHET_OF_SQUARE
 num_of_sqare db 1
 
-current_direction db RIGHT_DIRECTION
+
 
 SIZE_OF_HISTORY_POS equ 280 
 position_history dw SIZE_OF_HISTORY_POS dup(0)
@@ -29,6 +29,8 @@ lost db FALSE
 sleep_time dw REGULAR_SLEEP_TIME
 
 ther_is_apple db THERE_ISNT_APPLE
+
+
 
 ; Define new Point object: Point(x, y)
 ; x_position first 2 bytes.
@@ -45,6 +47,10 @@ UP_DIRECTION equ 0
 DOWN_DIRECTION equ 1
 LEFT_DIRECTION equ 2
 RIGHT_DIRECTION equ 3
+
+current_direction db RIGHT_DIRECTION
+right_direction_on_key_board db D_KEYBOARD
+left_direction_on_key_board db A_KEYBOARD
 
 THERE_ISNT_APPLE equ 1
 
@@ -71,6 +77,7 @@ GREEN equ 0010b
 RED	equ 0100b
 YELLOW equ 1110b
 CAYEN equ 0011b
+MAGNETA equ 1101b
 
 start_message db 'welcome to the best game ever enter a char to start$'
 ;----------
@@ -316,12 +323,16 @@ mov [color],RED
 
 cmp [apple_counter],7
 je tripple_sqare
-
+cmp [apple_counter],5
+je confuse_apple
 cmp [apple_counter],10
 je fast_apple
 jmp skip_change_color
 tripple_sqare:
 mov [color],CAYEN
+jmp skip_change_color
+confuse_apple:
+mov [color],MAGNETA
 jmp skip_change_color
 fast_apple:
 mov [color],YELLOW
@@ -443,31 +454,24 @@ cmp al,YELLOW
 je set_fast_apple
 cmp al,CAYEN
 je tripple_sqare_apple
+cmp al,MAGNETA
+je set_confuse_apple
 jmp end_proc_check_next_square_color
+
 eat_apple:
-mov [ther_is_apple],THERE_ISNT_APPLE
-call add_square
-mov [sleep_time],REGULAR_SLEEP_TIME
-mov si,0
-call play_music_sounds
+call eat_regular_apple
+jmp end_proc_check_next_square_color
+
+set_confuse_apple:
+call eat_confuse_apple
 jmp end_proc_check_next_square_color
 
 set_fast_apple:
-mov [sleep_time],FAST_SLEEP_TIME
-mov [ther_is_apple],THERE_ISNT_APPLE
-call add_square
-mov si,1
-call play_music_sounds
+call eat_fast_apple
 jmp end_proc_check_next_square_color
 
 tripple_sqare_apple:
-mov [ther_is_apple],THERE_ISNT_APPLE
-call add_square
-call add_square
-call add_square
-mov [sleep_time],REGULAR_SLEEP_TIME
-mov si,2
-call play_music_sounds
+call eat_fast_apple
 jmp end_proc_check_next_square_color
 
 loosing:
@@ -475,6 +479,56 @@ mov [lost],TRUE
 end_proc_check_next_square_color:
 ret 
 endp check_next_square_color
+
+proc eat_regular_apple
+mov [right_direction_on_key_board],D_KEYBOARD
+mov [left_direction_on_key_board],A_KEYBOARD
+mov [ther_is_apple],THERE_ISNT_APPLE
+call add_square
+mov [sleep_time],REGULAR_SLEEP_TIME
+mov si,0
+call play_music_sounds
+ret
+endp eat_regular_apple
+
+proc eat_fast_apple
+mov [sleep_time],FAST_SLEEP_TIME
+mov [ther_is_apple],THERE_ISNT_APPLE
+call add_square
+mov si,1
+call play_music_sounds
+ret
+endp eat_fast_apple
+
+proc eat_tripple_sqare_apple
+mov [ther_is_apple],THERE_ISNT_APPLE
+call add_square
+call add_square
+call add_square
+mov [sleep_time],REGULAR_SLEEP_TIME
+mov si,2
+call play_music_sounds
+ret
+endp eat_tripple_sqare_apple
+
+proc eat_confuse_apple
+mov [right_direction_on_key_board],A_KEYBOARD
+mov [left_direction_on_key_board], D_KEYBOARD
+mov si,3
+mov [ther_is_apple],THERE_ISNT_APPLE
+call add_square
+call play_music_sounds
+ret
+endp eat_confuse_apple
+
+
+
+
+
+
+
+
+
 
 proc moov
 WaitForKey:
@@ -501,10 +555,10 @@ WaitForKey:
 	cmp al,6
 	je pressed_add_square
 	
-	cmp al,D_KEYBOARD
+	cmp al,[right_direction_on_key_board]
 	je pressed_right
 	
-	cmp al,A_KEYBOARD
+	cmp al,[left_direction_on_key_board]
 	je pressed_left
 	
 	cmp al,S_KEYBOARD
