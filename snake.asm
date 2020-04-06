@@ -70,6 +70,16 @@ next_square_color db 0
 
 apple_counter db 0 
 
+;---- rules Strings
+STRING_REGULAR_APPLE db "Regular Apple$"
+STRING_FAST_APPLE db "Change the speed of your snake$"
+STRING_TRIPPLE_APPLE db "Tripple score apple$"
+STRING_CONFUSE_APPLE db "Switch betwen left and right$"
+
+LEN_REGULAR_APPLE_STRING equ 13
+LEN_TRIPPLE_APPLE_STRING equ 19
+LEN_CONFUSE_APPLE_STRING equ 28
+LEN_FAST_APPLE_STRING equ 30
 
 BLACK equ 0000b
 WHITE equ 1111b
@@ -660,10 +670,7 @@ proc SetGraphic
 	ret
 endp SetGraphic
 
-proc open_scrin
-mov dx, offset start_message
-mov ah, 9h
-Int 21h
+proc new_line
 ;carriage return
 mov dl, 10
 mov ah,2
@@ -672,6 +679,43 @@ int 21h
 mov dl, 13
 mov ah,2
 int 21h
+ret
+endp new_line
+
+proc open_scrin
+mov dx, offset start_message
+mov ah, 9h
+Int 21h
+
+call new_line
+
+mov ax,offset STRING_REGULAR_APPLE
+mov bl,RED
+mov cx,LEN_REGULAR_APPLE_STRING
+call print_with_color
+
+call new_line
+
+mov ax,offset STRING_FAST_APPLE
+mov bl,YELLOW
+mov cx,LEN_FAST_APPLE_STRING
+call print_with_color
+
+call new_line
+
+mov ax,offset STRING_TRIPPLE_APPLE
+mov bl,CAYEN
+mov cx,LEN_TRIPPLE_APPLE_STRING
+call print_with_color
+
+call new_line
+
+mov ax,offset STRING_CONFUSE_APPLE
+mov bl,MAGNETA
+mov cx,LEN_CONFUSE_APPLE_STRING
+call print_with_color
+
+call new_line
 
 ;get input from user to start
 mov ax,0
@@ -687,6 +731,21 @@ mov al, 2
 int 10h
 ret
 endp return_to_text_mode
+
+
+proc print_with_color ;ax- offset of the string bl-color ;cx <--- number of chars
+;ax <--- offset of the String
+;bl <--- color 
+;cx <--- number of chars
+mov dx,ax
+mov ah, 9
+
+int 10h
+
+int 21H
+ret 
+endp print_with_color
+
 
 proc end_screen
 mov si,4
@@ -723,11 +782,11 @@ int 21h
 mov dl, 13
 mov ah,2
 int 21h
-;get input from user to start
-mov ah, 1h
-int 21h
-
-
+waitkey:
+mov ah, 06h
+mov dl, 0ffh
+int 021h
+jz waitkey
 ret
 endp end_screen
 
