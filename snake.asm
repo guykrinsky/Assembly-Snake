@@ -71,15 +71,15 @@ next_square_color db 0
 apple_counter db 0 
 
 ;---- rules Strings
-STRING_REGULAR_APPLE db "Regular Apple$"
-STRING_FAST_APPLE db "Change the speed of your snake$"
-STRING_TRIPPLE_APPLE db "Tripple score apple$"
-STRING_CONFUSE_APPLE db "Switch betwen left and right$"
+STRING_REGULAR_APPLE db "Red apple-Regular Apple$"
+STRING_FAST_APPLE db "Yellow apple-Change the speed of your snake$"
+STRING_TRIPPLE_APPLE db "Cayen apple-Tripple score apple$"
+STRING_CONFUSE_APPLE db "Pink apple-Switch betwen left and right$"
 
-LEN_REGULAR_APPLE_STRING equ 13
-LEN_TRIPPLE_APPLE_STRING equ 19
-LEN_CONFUSE_APPLE_STRING equ 28
-LEN_FAST_APPLE_STRING equ 30
+LEN_REGULAR_APPLE_STRING equ 23
+LEN_TRIPPLE_APPLE_STRING equ 31
+LEN_CONFUSE_APPLE_STRING equ 39
+LEN_FAST_APPLE_STRING equ 43
 
 BLACK equ 0000b
 WHITE equ 1111b
