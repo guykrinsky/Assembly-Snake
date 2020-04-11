@@ -53,6 +53,7 @@ line_length dw SQUARE_LINE_LENGTH
 
 REGULAR_SLEEP_TIME equ 0df00h
 FAST_SLEEP_TIME equ 05f00h
+START_SLEEP_TIME equ 0ffffh
 
 random_x dw 0
 random_y dw 0
@@ -255,9 +256,6 @@ endp move_snake
 
 
 proc generate_apple
-	mov al,[ther_is_apple]
-	cmp al,TRUE
-	je end_proc_generate_apple
 
 	call random_x_pos
 	call random_y_pos
@@ -288,11 +286,9 @@ proc generate_apple
 	call print_square
 
 
-mov [ther_is_apple],TRUE
-
 
 inc [apple_counter]
-end_proc_generate_apple:
+
 
 ret
 endp generate_apple
@@ -507,28 +503,28 @@ endp check_next_square_color
 proc eat_regular_apple
 	mov [right_direction_on_key_board],D_KEYBOARD
 	mov [left_direction_on_key_board],A_KEYBOARD
-	mov [ther_is_apple],FALSE
 	inc [num_of_sqare]
 	mov [sleep_time],REGULAR_SLEEP_TIME
 	mov si,0
 	call play_music_sounds
+	call generate_apple
 	ret
 endp eat_regular_apple
 
 proc eat_fast_apple
 	mov [sleep_time],FAST_SLEEP_TIME
-	mov [ther_is_apple],FALSE
 	inc [num_of_sqare]
 	mov si,1
 	call play_music_sounds
+	call generate_apple
 	ret
 endp eat_fast_apple
 
 proc eat_tripple_sqare_apple
-	mov [ther_is_apple],FALSE
 	add [num_of_sqare],3
 	mov si,2
 	call play_music_sounds
+	call generate_apple
 	ret
 endp eat_tripple_sqare_apple
 
@@ -536,9 +532,10 @@ proc eat_confuse_apple
 	mov [right_direction_on_key_board],A_KEYBOARD
 	mov [left_direction_on_key_board], D_KEYBOARD
 	mov si,3
-	mov [ther_is_apple],FALSE
+
 	inc [num_of_sqare]
 	call play_music_sounds
+	call generate_apple
 	ret
 endp eat_confuse_apple
 
@@ -642,7 +639,6 @@ WaitForKey:
 	cmp al,TRUE
 	je ending
 
-	call generate_apple
 	push [sleep_time]
 	call sleep
 	
@@ -931,6 +927,22 @@ start:
 	call open_screen
 	call SetGraphic
 	call make_lines
+	call generate_apple
+	cmp [want_2_players],TRUE
+	jne skip_2_apples
+	; otherwise two apples generate in the same place
+	mov cx,5
+	sleep_for_apples_gap:
+		push cx
+		
+		push START_SLEEP_TIME
+		call sleep
+		
+		pop cx
+		loop sleep_for_apples_gap
+	
+	call generate_apple
+	skip_2_apples:
 	call game_loop
 	call end_screen
 	
