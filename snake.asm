@@ -3,7 +3,7 @@ MODEL small
 STACK 100h
 DATASEG
 
-SIZE_OF_HISTORY_POS equ 280 
+SIZE_OF_HISTORY_POS equ 460 
 position_history dw SIZE_OF_HISTORY_POS dup(10)
 snake2_position_history dw SIZE_OF_HISTORY_POS dup(100)
 
@@ -28,11 +28,14 @@ RֹֹֹֹIGHTֹ_KEYBOARD equ 04Dh
 LEFTֹ_KEYBOARD equ 04Bh
 UP_KEYBOARD equ 048h
 DOWN_KEYBOARD equ 050h
-num_of_sqare db 1
+
+num_of_sqare db 5
 
 next_square_color db BLACK
 
 is_lost db FALSE
+
+want_2_players db 0
 
 music_sounds dw 11EDh,0FE8h,0E2Bh,0D5Bh,0BE4h,0A98h,96Fh,8E5h
 
@@ -65,17 +68,17 @@ DOWN_DIRECTION equ 1
 LEFT_DIRECTION equ 2
 RIGHT_DIRECTION equ 3
 
-STRING_REGULAR_APPLE db "Red apple-Regular Apple$"
-STRING_FAST_APPLE db "Yellow apple-Change the speed of your snake$"
-STRING_TRIPPLE_APPLE db "Cayen apple-Tripple score apple$"
-STRING_CONFUSE_APPLE db "Pink apple-Switch betwen left and right$"
+STRING_REGULAR_APPLE db "Red apple - Regular Apple$"
+STRING_FAST_APPLE db "Yellow apple - Change the speed of your snake$"
+STRING_TRIPPLE_APPLE db "Cayen apple - Tripple score apple$"
+STRING_CONFUSE_APPLE db "Pink apple - Switch betwen left and right$"
 
-LEN_REGULAR_APPLE_STRING equ 23
-LEN_TRIPPLE_APPLE_STRING equ 31
-LEN_CONFUSE_APPLE_STRING equ 39
-LEN_FAST_APPLE_STRING equ 43
+LEN_REGULAR_APPLE_STRING equ 25
+LEN_TRIPPLE_APPLE_STRING equ 33
+LEN_CONFUSE_APPLE_STRING equ 41
+LEN_FAST_APPLE_STRING equ 45
 
-end_massage db "GG your score is $"
+end_massage db "GG, your score is $"
 
 FALSE equ 0
 TRUE equ 1
@@ -83,7 +86,7 @@ TRUE equ 1
 current_direction dw RIGHT_DIRECTION
 snake2_current_direction dw UP_DIRECTION
 
-start_message db 'welcome to the best game ever enter a char to start$'
+start_message db 'Welcome to the best game ever! Enter how many players are playing? (1/2)$'
 
 CODESEG
 
@@ -646,7 +649,10 @@ WaitForKey:
 	;---------- snake1
 	call snake1
 	;--------------snake2
+	cmp [want_2_players],FALSE
+	je skip_mov_snake_2
 	call snake2
+	skip_mov_snake_2:
 	
 	;check if there is a a new key in buffer
 	in al, 64h
@@ -669,9 +675,14 @@ WaitForKey:
 	
 	
 	call change_snake1_direction
+		
+	cmp [want_2_players],FALSE
+	je skip_change_direction_snake_2
+
 	call change_snake2_direction
 	
-	jmp_WaitForKey:
+	skip_change_direction_snake_2:
+	
 	jmp WaitForKey
 
 	pressed_add_square:
@@ -771,13 +782,8 @@ proc new_line
 	ret
 endp new_line
 
-proc open_scrin
-	mov dx, offset start_message
-	mov ah, 9h
-	Int 21h
-
-	call new_line
-
+proc open_screen
+	
 	mov ax,offset STRING_REGULAR_APPLE
 	mov bl,RED
 	mov cx,LEN_REGULAR_APPLE_STRING
@@ -806,12 +812,30 @@ proc open_scrin
 
 	call new_line
 
-	;get input from user to start
-	mov ax,0
-	mov ah, 1h
-	int 21h
+	;get input from user to know how many players are playing
+	how_much_players_input_loop:
+		mov dx, offset start_message
+		mov ah, 9h
+		Int 21h
+
+		call new_line
+		
+		; getting user input.
+		mov ah, 1h
+		int 21h
+		sub al,031h
+		
+		push ax
+		call new_line
+		pop ax
+		
+		;Ccheck if input is valid (1/2)
+		cmp al,TRUE
+		jg how_much_players_input_loop
+		
+	mov [want_2_players],al
 	ret
-endp open_scrin
+endp open_screen
 
 
 proc return_to_text_mode
@@ -822,7 +846,7 @@ proc return_to_text_mode
 endp return_to_text_mode
 
 
-proc print_with_color ;ax- offset of the string bl-color ;cx <--- number of chars
+proc print_with_color
 	;ax <--- offset of the String
 	;bl <--- color 
 	;cx <--- number of chars
@@ -851,10 +875,10 @@ proc end_screen
 	call return_to_text_mode
 	mov al,0
 	call mov_to_the_middle_of_the_screen
-	 MOV DX, OFFSET end_massage
-	 MOV AH, 9H
-	 INT 21H 
-	 mov al,1
+	mov dx, offset end_massage
+	mov ah, 9H
+	int 21H 
+	mov al,1
 	call mov_to_the_middle_of_the_screen
 	mov ah,0
 	mov al,[num_of_sqare]
@@ -904,7 +928,7 @@ proc mov_to_the_middle_of_the_screen;----al is parmater wiche line to you want
 start:
 	mov ax, @data
 	mov ds, ax
-	call open_scrin
+	call open_screen
 	call SetGraphic
 	call make_lines
 	call game_loop
