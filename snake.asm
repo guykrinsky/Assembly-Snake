@@ -5,6 +5,8 @@ DATASEG
 
 SIZE_OF_HISTORY_POS equ 280 
 position_history dw SIZE_OF_HISTORY_POS dup(10)
+snake2_position_history dw SIZE_OF_HISTORY_POS dup(100)
+
 
 saveKey db 0
 
@@ -13,14 +15,19 @@ WHITE equ 1111b
 GREEN equ 0010b
 RED	equ 0100b
 YELLOW equ 1110b
-CAYEN equ 0011b
+CAYEN equ 1011b
 MAGNETA equ 1101b
+BLUE equ 1001b
 
 W_KEYBOARD equ 17
 S_KEYBOARD equ 31
 A_KEYBOARD equ 30
 D_KEYBOARD equ 32
 
+RֹֹֹֹIGHTֹ_KEYBOARD equ 04Dh
+LEFTֹ_KEYBOARD equ 04Bh
+UP_KEYBOARD equ 048h
+DOWN_KEYBOARD equ 050h
 num_of_sqare db 1
 
 next_square_color db BLACK
@@ -49,6 +56,7 @@ random_y dw 0
 
 POINT_OBJECT_SIZE equ 4 
 next_place_in_arr dw POINT_OBJECT_SIZE
+snake2_next_place_in_arr dw POINT_OBJECT_SIZE
 
 sleep_time dw REGULAR_SLEEP_TIME
 
@@ -73,6 +81,7 @@ FALSE equ 0
 TRUE equ 1
 
 current_direction dw RIGHT_DIRECTION
+snake2_current_direction dw UP_DIRECTION
 
 start_message db 'welcome to the best game ever enter a char to start$'
 
@@ -171,7 +180,9 @@ endp sleep
 
 
 proc move_snake
-	;arguments: direction,position_history,place_in_arr
+	;arguments: direction,offset position_history,place_in_arr,offset of place_in_arr
+	color equ [bp+12]
+	offset_of_place_in_arr equ [bp+10]
 	direction equ [bp+8]
 	place_in_arr equ [bp+4]
 	position_history_arg equ [bp+6]
@@ -222,9 +233,11 @@ proc move_snake
 	
 	push next_x
 	push next_y
-	push GREEN
+	push color
 	call print_square
 	
+	push position_history_arg
+	push offset_of_place_in_arr
 	push next_x
 	push next_y
 	call add_new_snake_position
@@ -234,7 +247,7 @@ proc move_snake
 	
 	add sp,4
 	pop bp
-	ret 6
+	ret 10
 endp move_snake
 
 
@@ -336,27 +349,32 @@ endp check_x_and_random_y
 
 proc add_new_snake_position
 ;TODO add to arguments snake object
-	;arguments: x,y
+	;arguments: x,y,offset_next_place_in_arr,history_pos_offset
+	history_pos_offset equ [bp+10]
+	offset_next_place_in_arr equ [bp+8]
 	x equ [bp+6]
 	y equ [bp+4]
 	push bp
 	mov bp,sp
 	
-	mov bx,offset position_history
-	cmp [next_place_in_arr],SIZE_OF_HISTORY_POS
+	;mov bx,offset position_history
+	mov bx, offset_next_place_in_arr
+	cmp [bx],SIZE_OF_HISTORY_POS
 	jne skip_set_next_place_in_arr
-	mov [next_place_in_arr],0
+	mov [bx],0
 	skip_set_next_place_in_arr:
-		mov si,[next_place_in_arr]
+		mov si,[bx]
 		mov ax,x
+		mov bx,history_pos_offset
 		mov [bx+si],ax
 		add si, 2
 		mov ax,y
 		mov [bx+si],ax
 		add si, 2
-		mov [next_place_in_arr],si
+		mov bx,offset_next_place_in_arr
+		mov [bx],si
 	pop bp
-	ret 4
+	ret 8
 endp add_new_snake_position
 
 proc set_next_square_color
@@ -455,8 +473,10 @@ proc check_next_square_color
 	je tripple_sqare_apple
 	cmp al,MAGNETA
 	je set_confuse_apple
+	cmp al,BLUE
+	je loosing
 	jmp end_proc_check_next_square_color
-
+	
 	eat_apple:
 	call eat_regular_apple
 	jmp end_proc_check_next_square_color
@@ -576,19 +596,13 @@ proc erase_last_square
 	ret 4
 endp erase_last_square
 
-
-
-proc game_loop
-WaitForKey:
-
-	call generate_apple
-	push [sleep_time]
-	call sleep
-	
+proc snake1
 	push offset position_history
 	push [next_place_in_arr]
 	call erase_last_square
 	
+	push GREEN
+	push offset next_place_in_arr
 	push [current_direction]
 	push offset position_history
 	push [next_place_in_arr]
@@ -597,6 +611,42 @@ WaitForKey:
 	mov al,[next_square_color]
 	push ax
 	call check_next_square_color
+	ret
+endp snake1
+
+proc snake2
+	push offset snake2_position_history
+	push [snake2_next_place_in_arr]
+	call erase_last_square
+	
+	push BLUE
+	push offset snake2_next_place_in_arr
+	push [snake2_current_direction]
+	push offset snake2_position_history
+	push [snake2_next_place_in_arr]
+	call move_snake
+	
+	mov al,[next_square_color]
+	push ax
+	call check_next_square_color
+	ret
+endp
+
+proc game_loop
+WaitForKey:
+
+	mov al,[is_lost]
+	cmp al,TRUE
+	je ending
+
+	call generate_apple
+	push [sleep_time]
+	call sleep
+	
+	;---------- snake1
+	call snake1
+	;--------------snake2
+	call snake2
 	
 	;check if there is a a new key in buffer
 	in al, 64h
@@ -608,11 +658,31 @@ WaitForKey:
 	je WaitForKey
 	mov [saveKey], al  ;new key - store it
 	
-	mov bx,[current_direction]
 	
 	cmp al,6
 	je pressed_add_square
 	
+	;------end
+	cmp al,1
+	je ending
+	
+	
+	
+	call change_snake1_direction
+	call change_snake2_direction
+	
+	jmp_WaitForKey:
+	jmp WaitForKey
+
+	pressed_add_square:
+		inc [num_of_sqare]
+		mov [ther_is_apple],FALSE
+		jmp WaitForKey
+ending:
+ret
+endp game_loop
+
+proc change_snake1_direction
 	cmp al,[right_direction_on_key_board]
 	je pressed_right
 	
@@ -625,45 +695,69 @@ WaitForKey:
 	cmp al,W_KEYBOARD
 	je pressed_up
 	
-	;------end
-	cmp al,1
-	je ending
+	jmp end_proc_change_snake1_direction
 	
-	mov al,[is_lost]
-	cmp al,TRUE
-	je ending
-	
-	jmpWaitForKey:
-	jmp WaitForKey
-
 	pressed_up:
-		cmp bx,DOWN_DIRECTION
-		je WaitForKey
+		cmp [current_direction],DOWN_DIRECTION
+		je end_proc_change_snake1_direction
 		mov [current_direction],UP_DIRECTION
-		jmp WaitForKey
+		jmp end_proc_change_snake1_direction
 	pressed_down:
-		cmp bx,UP_DIRECTION
-		je jmpWaitForKey
+		cmp [current_direction],UP_DIRECTION
+		je end_proc_change_snake1_direction
 		mov [current_direction],DOWN_DIRECTION
-		jmp WaitForKey
+		jmp end_proc_change_snake1_direction
 	pressed_left:
-		cmp bx,RIGHT_DIRECTION
-		je jmpWaitForKey
+		cmp [current_direction],RIGHT_DIRECTION
+		je end_proc_change_snake1_direction
 		mov [current_direction],LEFT_DIRECTION
-		jmp WaitForKey
+		jmp end_proc_change_snake1_direction
 	pressed_right:
-		cmp bx,LEFT_DIRECTION
-		je jmpWaitForKey
+		cmp [current_direction],LEFT_DIRECTION
+		je end_proc_change_snake1_direction
 		mov [current_direction],RIGHT_DIRECTION
-		jmp WaitForKey
-	pressed_add_square:
-		inc [num_of_sqare]
-		mov [ther_is_apple],FALSE
-		jmp WaitForKey
-ending:
-ret
-endp game_loop
+	end_proc_change_snake1_direction:
+	ret
+endp change_snake1_direction
 
+
+proc change_snake2_direction
+	cmp al,RֹֹֹֹIGHTֹ_KEYBOARD
+	je snake2_pressed_right
+	
+	cmp al,LEFTֹ_KEYBOARD
+	je snake2_pressed_left
+	
+	cmp al,DOWN_KEYBOARD
+	je snake2_pressed_down
+
+	cmp al,UP_KEYBOARD
+	je snake2_pressed_up
+	
+	jmp end_proc_change_snake1_direction
+	
+	snake2_pressed_up:
+		cmp [snake2_current_direction],DOWN_DIRECTION
+		je end_proc_change_snake2_direction
+		mov [snake2_current_direction],UP_DIRECTION
+		jmp end_proc_change_snake2_direction
+	snake2_pressed_down:
+		cmp [snake2_current_direction],UP_DIRECTION
+		je end_proc_change_snake2_direction
+		mov [snake2_current_direction],DOWN_DIRECTION
+		jmp end_proc_change_snake2_direction
+	snake2_pressed_left:
+		cmp [snake2_current_direction],RIGHT_DIRECTION
+		je end_proc_change_snake2_direction
+		mov [snake2_current_direction],LEFT_DIRECTION
+		jmp end_proc_change_snake2_direction
+	snake2_pressed_right:
+		cmp [snake2_current_direction],LEFT_DIRECTION
+		je end_proc_change_snake2_direction
+		mov [snake2_current_direction],RIGHT_DIRECTION
+	end_proc_change_snake2_direction:
+	ret
+endp change_snake2_direction
 
 proc new_line
 	;carriage return
