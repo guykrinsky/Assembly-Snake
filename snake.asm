@@ -24,12 +24,18 @@ S_KEYBOARD equ 31
 A_KEYBOARD equ 30
 D_KEYBOARD equ 32
 
-RֹֹֹֹIGHTֹ_KEYBOARD equ 04Dh
-LEFTֹ_KEYBOARD equ 04Bh
+RIGHT_KEYBOARD equ 04Dh
+LEFT_KEYBOARD equ 04Bh
 UP_KEYBOARD equ 048h
 DOWN_KEYBOARD equ 050h
 
-num_of_sqare db 5
+
+
+NUMBER_OF_START_SQUARE equ 5
+num_of_square db NUMBER_OF_START_SQUARE
+
+
+
 
 next_square_color db BLACK
 
@@ -86,6 +92,9 @@ TRUE equ 1
 
 current_direction dw RIGHT_DIRECTION
 snake2_current_direction dw UP_DIRECTION
+
+left_onKeyboard db LEFT_KEYBOARD
+right_onKeyboard db RIGHT_KEYBOARD
 
 start_message db 'Welcome to the best game ever! Enter how many players are playing? (1/2)$'
 
@@ -285,63 +294,60 @@ proc generate_apple
 	push [apple_color]
 	call print_square
 
-
-
 inc [apple_counter]
-
 
 ret
 endp generate_apple
 
 
 proc random_x_pos
-mov ah, 00
-INT 1Ah
-mov dh,0
-mov ax,dx
-mov cx,SQUARE_LINE_LENGTH
-div cl
-sub dl,ah
-mov dh,0
-add dx,50
+	mov ah, 00
+	INT 1Ah
+	mov dh,0
+	mov ax,dx
+	mov cx,SQUARE_LINE_LENGTH
+	div cl
+	sub dl,ah
+	mov dh,0
+	add dx,50
 
-mov [random_x],dx
-end_proc_random_x_pos:
+	mov [random_x],dx
+	end_proc_random_x_pos:
 
 ret
 endp random_x_pos
 
 proc random_y_pos
-mov ah, 00
-INT 1Ah
-mov dh,0
-mov ax,dx
-mov cx,SQUARE_HEIGHT
-div cl
-sub dl,ah
-add dx,25
-mov dh,0
-mov [random_y],dx
+	mov ah, 00
+	INT 1Ah
+	mov dh,0
+	mov ax,dx
+	mov cx,SQUARE_HEIGHT
+	div cl
+	sub dl,ah
+	add dx,25
+	mov dh,0
+	mov [random_y],dx
 ret
 endp random_y_pos
 
 proc check_x_and_random_y
-cmp [random_x],5
-jg skip_x_to_low
-mov [random_x],10
-skip_x_to_low:
-cmp [random_x],300
-jl skip_x_to_high
-mov [random_x],270
-skip_x_to_high:
-cmp [random_y],5
-jg skip_y_to_low
-mov [random_y],10
-skip_y_to_low:
-cmp [random_y],190
-jl skip_y_to_high
-mov [random_y],185
-skip_y_to_high:
+	cmp [random_x],5
+	jg skip_x_to_low
+	mov [random_x],10
+	skip_x_to_low:
+	cmp [random_x],300
+	jl skip_x_to_high
+	mov [random_x],270
+	skip_x_to_high:
+	cmp [random_y],5
+	jg skip_y_to_low
+	mov [random_y],10
+	skip_y_to_low:
+	cmp [random_y],190
+	jl skip_y_to_high
+	mov [random_y],185
+	skip_y_to_high:
 ret
 endp check_x_and_random_y
 
@@ -458,22 +464,31 @@ proc check_next_square_color
 	PUSH BP
 	MOV BP,SP
 	mov al,next_square_color_arg
+	
 	cmp al,BLACK
 	je end_proc_check_next_square_color
+	
 	cmp al,RED
 	je eat_apple
+	
 	cmp al,WHITE
 	je loosing
+	
 	cmp al,GREEN
 	je loosing
+	
 	cmp al,YELLOW
 	je set_fast_apple
+	
 	cmp al,CAYEN
 	je tripple_sqare_apple
+	
 	cmp al,MAGNETA
 	je set_confuse_apple
+	
 	cmp al,BLUE
 	je loosing
+	
 	jmp end_proc_check_next_square_color
 	
 	eat_apple:
@@ -501,10 +516,16 @@ proc check_next_square_color
 endp check_next_square_color
 
 proc eat_regular_apple
+	;cancel confuse apple
 	mov [right_direction_on_key_board],D_KEYBOARD
 	mov [left_direction_on_key_board],A_KEYBOARD
-	inc [num_of_sqare]
+	mov [right_onKeyboard],RIGHT_KEYBOARD
+	mov [left_onKeyboard],LEFT_KEYBOARD
+	
+	;cancel fast apple
 	mov [sleep_time],REGULAR_SLEEP_TIME
+	
+	inc [num_of_square]
 	mov si,0
 	call play_music_sounds
 	call generate_apple
@@ -513,7 +534,7 @@ endp eat_regular_apple
 
 proc eat_fast_apple
 	mov [sleep_time],FAST_SLEEP_TIME
-	inc [num_of_sqare]
+	inc [num_of_square]
 	mov si,1
 	call play_music_sounds
 	call generate_apple
@@ -521,7 +542,7 @@ proc eat_fast_apple
 endp eat_fast_apple
 
 proc eat_tripple_sqare_apple
-	add [num_of_sqare],3
+	add [num_of_square],3
 	mov si,2
 	call play_music_sounds
 	call generate_apple
@@ -531,9 +552,11 @@ endp eat_tripple_sqare_apple
 proc eat_confuse_apple
 	mov [right_direction_on_key_board],A_KEYBOARD
 	mov [left_direction_on_key_board], D_KEYBOARD
+	mov [right_onKeyboard],LEFT_KEYBOARD
+	mov [left_onKeyboard],RIGHT_KEYBOARD
 	mov si,3
 
-	inc [num_of_sqare]
+	inc [num_of_square]
 	call play_music_sounds
 	call generate_apple
 	ret
@@ -571,7 +594,7 @@ proc erase_last_square
 
 	mov cx,place_in_arr
 	mov al,POINT_OBJECT_SIZE
-	mov bl,[num_of_sqare]
+	mov bl,[num_of_square]
 	mul bl
 	cmp ax,cx
 	jg num_of_square_bigger_then_next_place_in_arr
@@ -579,10 +602,11 @@ proc erase_last_square
 
 	jmp skip_num_of_square_bigger_then_next_place_in_arr
 	num_of_square_bigger_then_next_place_in_arr:
-	sub ax,cx
-	mov cx,SIZE_OF_HISTORY_POS
-	sub cx,ax
-	skip_num_of_square_bigger_then_next_place_in_arr:
+		sub ax,cx
+		mov cx,SIZE_OF_HISTORY_POS
+		sub cx,ax
+
+	skip_num_of_square_bigger_then_next_place_in_arr:	
 	mov si,cx
 	mov bx,position_history_arg
 	mov ax,[bx+si]
@@ -668,8 +692,6 @@ WaitForKey:
 	cmp al,1
 	je ending
 	
-	
-	
 	call change_snake1_direction
 		
 	cmp [want_2_players],FALSE
@@ -682,7 +704,7 @@ WaitForKey:
 	jmp WaitForKey
 
 	pressed_add_square:
-		inc [num_of_sqare]
+		inc [num_of_square]
 		mov [ther_is_apple],FALSE
 		jmp WaitForKey
 ending:
@@ -709,16 +731,19 @@ proc change_snake1_direction
 		je end_proc_change_snake1_direction
 		mov [current_direction],UP_DIRECTION
 		jmp end_proc_change_snake1_direction
+	
 	pressed_down:
 		cmp [current_direction],UP_DIRECTION
 		je end_proc_change_snake1_direction
 		mov [current_direction],DOWN_DIRECTION
 		jmp end_proc_change_snake1_direction
+	
 	pressed_left:
 		cmp [current_direction],RIGHT_DIRECTION
 		je end_proc_change_snake1_direction
 		mov [current_direction],LEFT_DIRECTION
 		jmp end_proc_change_snake1_direction
+	
 	pressed_right:
 		cmp [current_direction],LEFT_DIRECTION
 		je end_proc_change_snake1_direction
@@ -729,10 +754,11 @@ endp change_snake1_direction
 
 
 proc change_snake2_direction
-	cmp al,RֹֹֹֹIGHTֹ_KEYBOARD
+
+	cmp al,[right_onKeyboard]
 	je snake2_pressed_right
 	
-	cmp al,LEFTֹ_KEYBOARD
+	cmp al,[left_onKeyboard]
 	je snake2_pressed_left
 	
 	cmp al,DOWN_KEYBOARD
@@ -748,16 +774,19 @@ proc change_snake2_direction
 		je end_proc_change_snake2_direction
 		mov [snake2_current_direction],UP_DIRECTION
 		jmp end_proc_change_snake2_direction
+	
 	snake2_pressed_down:
 		cmp [snake2_current_direction],UP_DIRECTION
 		je end_proc_change_snake2_direction
 		mov [snake2_current_direction],DOWN_DIRECTION
 		jmp end_proc_change_snake2_direction
+	
 	snake2_pressed_left:
 		cmp [snake2_current_direction],RIGHT_DIRECTION
 		je end_proc_change_snake2_direction
 		mov [snake2_current_direction],LEFT_DIRECTION
 		jmp end_proc_change_snake2_direction
+	
 	snake2_pressed_right:
 		cmp [snake2_current_direction],LEFT_DIRECTION
 		je end_proc_change_snake2_direction
@@ -875,9 +904,13 @@ proc end_screen
 	mov ah, 9H
 	int 21H 
 	mov al,1
+	
 	call mov_to_the_middle_of_the_screen
+	
+	;print num_of_square - NUMBER_OF_START_SQUARE
+	sub [num_of_square],NUMBER_OF_START_SQUARE
 	mov ah,0
-	mov al,[num_of_sqare]
+	mov al,[num_of_square]
 	mov cl,10
 	div cl
 	mov dl ,al
@@ -891,6 +924,7 @@ proc end_screen
 	add dl,30h
 	mov ah, 2h
 	int 21h
+	
 	pop ax
 	;carriage return
 	mov dl, 10
@@ -900,11 +934,7 @@ proc end_screen
 	mov dl, 13
 	mov ah,2
 	int 21h
-	waitkey:
-	mov ah, 06h
-	mov dl, 0ffh
-	int 021h
-	jz waitkey
+
 	ret
 endp end_screen
 
