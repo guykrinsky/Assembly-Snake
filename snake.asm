@@ -47,7 +47,6 @@ music_sounds dw 11EDh,0FE8h,0E2Bh,0D5Bh,0BE4h,0A98h,96Fh,8E5h
 
 apple_color dw red
 apple_counter db 0
-ther_is_apple db FALSE
 
 right_direction_on_key_board db D_KEYBOARD
 left_direction_on_key_board db A_KEYBOARD
@@ -705,7 +704,7 @@ WaitForKey:
 
 	pressed_add_square:
 		inc [num_of_square]
-		mov [ther_is_apple],FALSE
+		call generate_apple
 		jmp WaitForKey
 ending:
 ret
@@ -907,34 +906,28 @@ proc end_screen
 	
 	call mov_to_the_middle_of_the_screen
 	
-	;print num_of_square - NUMBER_OF_START_SQUARE
+	;print num_of_square minus NUMBER_OF_START_SQUARE
 	sub [num_of_square],NUMBER_OF_START_SQUARE
 	mov ah,0
 	mov al,[num_of_square]
 	mov cl,10
 	div cl
 	mov dl ,al
+	;print tens digit
 	push ax
 	add dl,30h
 	mov ah, 2h
 	int 21h
+	;print units digit
 	pop ax
 	mov dl ,ah
-	push ax
 	add dl,30h
 	mov ah, 2h
 	int 21h
 	
-	pop ax
-	;carriage return
-	mov dl, 10
-	mov ah,2
-	int 21h
-	;new line
-	mov dl, 13
-	mov ah,2
-	int 21h
+	call new_line
 
+	
 	ret
 endp end_screen
 
