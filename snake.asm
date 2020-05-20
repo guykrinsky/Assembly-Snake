@@ -41,7 +41,7 @@ next_square_color db BLACK
 
 is_lost db FALSE
 
-want_2_players db 0
+is_want_2_players db 0
 
 music_sounds dw 11EDh,0FE8h,0E2Bh,0D5Bh,0BE4h,0A98h,96Fh,8E5h
 
@@ -53,6 +53,7 @@ left_direction_on_key_board db A_KEYBOARD
 
 SQUARE_LINE_LENGTH equ 5
 SQUARE_HEIGHT equ 5
+
 highet dw SQUARE_HEIGHT
 line_length dw SQUARE_LINE_LENGTH
 
@@ -64,8 +65,8 @@ random_x dw 0
 random_y dw 0
 
 POINT_OBJECT_SIZE equ 4 
-next_place_in_arr dw POINT_OBJECT_SIZE
-snake2_next_place_in_arr dw POINT_OBJECT_SIZE
+next_place_in_pos_history dw POINT_OBJECT_SIZE
+snake2_next_place_in_pos_history dw POINT_OBJECT_SIZE
 
 sleep_time dw REGULAR_SLEEP_TIME
 
@@ -78,6 +79,10 @@ STRING_REGULAR_APPLE db "Red apple - Regular Apple$"
 STRING_FAST_APPLE db "Yellow apple - Change the speed of your snake$"
 STRING_TRIPPLE_APPLE db "Cayen apple - Tripple score apple$"
 STRING_CONFUSE_APPLE db "Pink apple - Switch betwen left and right$"
+
+first_plyer_rules db "First player move with w - up, s - down, a - left, d - right.$"
+second_plyer_rules db "Second player move with the arrows.$"
+
 
 LEN_REGULAR_APPLE_STRING equ 25
 LEN_TRIPPLE_APPLE_STRING equ 33
@@ -183,7 +188,7 @@ proc sleep
 	mov bp,sp
 	mov cx,0
 	mov dx,sleep_time_arg
-	;--------- caling wait int
+	;--------- calling wait int
 	mov ah, 86h
 	int 15h
 	pop bp
@@ -352,21 +357,19 @@ endp check_x_and_random_y
 
 
 proc add_new_snake_position
-;TODO add to arguments snake object
-	;arguments: x,y,offset_next_place_in_arr,history_pos_offset
+	;arguments: x,y,offset_next_place_in_pos_history,history_pos_offset
 	history_pos_offset equ [bp+10]
-	offset_next_place_in_arr equ [bp+8]
+	offset_next_place_in_pos_history equ [bp+8]
 	x equ [bp+6]
 	y equ [bp+4]
 	push bp
 	mov bp,sp
 	
-	;mov bx,offset position_history
-	mov bx, offset_next_place_in_arr
+	mov bx, offset_next_place_in_pos_history
 	cmp [bx],SIZE_OF_HISTORY_POS
-	jne skip_set_next_place_in_arr
+	jne skip_set_next_place_in_pos_history
 	mov [bx],0
-	skip_set_next_place_in_arr:
+	skip_set_next_place_in_pos_history:
 		mov si,[bx]
 		mov ax,x
 		mov bx,history_pos_offset
@@ -375,7 +378,7 @@ proc add_new_snake_position
 		mov ax,y
 		mov [bx+si],ax
 		add si, 2
-		mov bx,offset_next_place_in_arr
+		mov bx,offset_next_place_in_pos_history
 		mov [bx],si
 	pop bp
 	ret 8
@@ -460,8 +463,8 @@ endp make_lines
 proc check_next_square_color
 ;arguments: next_square_color
 	next_square_color_arg equ [bp+4]
-	PUSH BP
-	MOV BP,SP
+	push bp
+	mov bp, sp
 	mov al,next_square_color_arg
 	
 	cmp al,BLACK
@@ -525,7 +528,7 @@ proc eat_regular_apple
 	mov [sleep_time],REGULAR_SLEEP_TIME
 	
 	inc [num_of_square]
-	mov si,0
+	push 0
 	call play_music_sounds
 	call generate_apple
 	ret
@@ -534,7 +537,7 @@ endp eat_regular_apple
 proc eat_fast_apple
 	mov [sleep_time],FAST_SLEEP_TIME
 	inc [num_of_square]
-	mov si,1
+	push 1
 	call play_music_sounds
 	call generate_apple
 	ret
@@ -542,7 +545,7 @@ endp eat_fast_apple
 
 proc eat_tripple_sqare_apple
 	add [num_of_square],3
-	mov si,2
+	push 2
 	call play_music_sounds
 	call generate_apple
 	ret
@@ -553,16 +556,19 @@ proc eat_confuse_apple
 	mov [left_direction_on_key_board], D_KEYBOARD
 	mov [right_onKeyboard],LEFT_KEYBOARD
 	mov [left_onKeyboard],RIGHT_KEYBOARD
-	mov si,3
-
 	inc [num_of_square]
+	push 3
 	call play_music_sounds
 	call generate_apple
 	ret
 endp eat_confuse_apple
 
-proc  play_music_sounds ;--- paramater in si
-	mov ax, [offset music_sounds+si]	
+proc  play_music_sounds ;--- arguments offset of music_sounds
+	offset_of_music_sound equ [bp+4]
+	push bp
+	mov bp,sp
+	mov bx, offset_of_music_sound
+	mov ax, [offset music_sounds + bx]	
 	out 42h,al
 	mov al,ah
 	out 42h,al
@@ -570,11 +576,12 @@ proc  play_music_sounds ;--- paramater in si
 	mov al,11b
 	out 61h,al
 	
-	;caling sleep otherwise you cant hear sound
+	;calling sleep otherwise you cant hear sound
 	push REGULAR_SLEEP_TIME
 	call sleep
 	call stop_playing_nusic
-	ret
+	pop bp
+	ret 2
 endp play_music_sounds
 
 
@@ -596,16 +603,16 @@ proc erase_last_square
 	mov bl,[num_of_square]
 	mul bl
 	cmp ax,cx
-	jg num_of_square_bigger_then_next_place_in_arr
+	jg num_of_square_bigger_then_next_place_in_pos_history
 	sub cx,ax
 
-	jmp skip_num_of_square_bigger_then_next_place_in_arr
-	num_of_square_bigger_then_next_place_in_arr:
+	jmp skip_num_of_square_bigger_then_next_place_in_pos_history
+	num_of_square_bigger_then_next_place_in_pos_history:
 		sub ax,cx
 		mov cx,SIZE_OF_HISTORY_POS
 		sub cx,ax
 
-	skip_num_of_square_bigger_then_next_place_in_arr:	
+	skip_num_of_square_bigger_then_next_place_in_pos_history:	
 	mov si,cx
 	mov bx,position_history_arg
 	mov ax,[bx+si]
@@ -621,14 +628,14 @@ endp erase_last_square
 
 proc snake1
 	push offset position_history
-	push [next_place_in_arr]
+	push [next_place_in_pos_history]
 	call erase_last_square
 	
 	push GREEN
-	push offset next_place_in_arr
+	push offset next_place_in_pos_history
 	push [current_direction]
 	push offset position_history
-	push [next_place_in_arr]
+	push [next_place_in_pos_history]
 	call move_snake
 	
 	mov al,[next_square_color]
@@ -639,14 +646,14 @@ endp snake1
 
 proc snake2
 	push offset snake2_position_history
-	push [snake2_next_place_in_arr]
+	push [snake2_next_place_in_pos_history]
 	call erase_last_square
 	
 	push BLUE
-	push offset snake2_next_place_in_arr
+	push offset snake2_next_place_in_pos_history
 	push [snake2_current_direction]
 	push offset snake2_position_history
-	push [snake2_next_place_in_arr]
+	push [snake2_next_place_in_pos_history]
 	call move_snake
 	
 	mov al,[next_square_color]
@@ -668,7 +675,7 @@ WaitForKey:
 	;---------- snake1
 	call snake1
 	;--------------snake2
-	cmp [want_2_players],FALSE
+	cmp [is_want_2_players],FALSE
 	je skip_mov_snake_2
 	call snake2
 	skip_mov_snake_2:
@@ -693,7 +700,7 @@ WaitForKey:
 	
 	call change_snake1_direction
 		
-	cmp [want_2_players],FALSE
+	cmp [is_want_2_players],FALSE
 	je skip_change_direction_snake_2
 
 	call change_snake2_direction
@@ -807,6 +814,21 @@ proc new_line
 endp new_line
 
 proc open_screen
+
+	mov dx, offset first_plyer_rules
+	mov ah, 9H
+	int 21H 
+	mov al,1
+	
+	call new_line
+	
+	
+	mov dx, offset second_plyer_rules
+	mov ah, 9H
+	int 21H 
+	mov al,1
+	
+	call new_line
 	
 	mov ax,offset STRING_REGULAR_APPLE
 	mov bl,RED
@@ -853,11 +875,11 @@ proc open_screen
 		call new_line
 		pop ax
 		
-		;Ccheck if input is valid (1/2)
+		;Check if input is valid (1/2)
 		cmp al,TRUE
 		jg how_much_players_input_loop
 		
-	mov [want_2_players],al
+	mov [is_want_2_players],al
 	ret
 endp open_screen
 
@@ -894,8 +916,8 @@ endp print_with_color
 endp SetGraphic
 
 proc end_screen
-	mov si,4
-	;call play_music_sounds
+	push 4
+	call play_music_sounds
 	call return_to_text_mode
 	mov al,0
 	call mov_to_the_middle_of_the_screen
@@ -951,7 +973,7 @@ start:
 	call SetGraphic
 	call make_lines
 	call generate_apple
-	cmp [want_2_players],TRUE
+	cmp [is_want_2_players],TRUE
 	jne skip_2_apples
 	; otherwise two apples generate in the same place
 	mov cx,5
