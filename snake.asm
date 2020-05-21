@@ -4,7 +4,7 @@ STACK 100h
 DATASEG
 
 SIZE_OF_HISTORY_POS equ 460 
-position_history dw SIZE_OF_HISTORY_POS dup(10)
+position_history dw SIZE_OF_HISTORY_POS dup(50)
 snake2_position_history dw SIZE_OF_HISTORY_POS dup(100)
 
 
@@ -270,6 +270,35 @@ endp move_snake
 
 proc generate_apple
 
+	mov dl, 13
+	mov ah,2
+	int 21h
+
+	mov dx, offset end_massage
+	mov ah, 9H
+	int 21H 
+	mov al,1
+		
+	mov al, [num_of_square]
+	
+	;print num_of_square minus NUMBER_OF_START_SQUARE
+	sub al, NUMBER_OF_START_SQUARE
+	mov ah,0
+	mov cl,10
+	div cl
+	mov dl ,al
+	;print tens digit 
+	push ax
+	add dl,30h
+	mov ah, 2h
+	int 21h
+	;print units digit
+	pop ax
+	mov dl ,ah
+	add dl,30h
+	mov ah, 2h
+	int 21h
+
 	call random_x_pos
 	call random_y_pos
 	mov [apple_color],RED
@@ -317,6 +346,7 @@ proc random_x_pos
 
 	mov [random_x],dx
 	end_proc_random_x_pos:
+	;return random num in random_x var
 
 ret
 endp random_x_pos
@@ -326,32 +356,42 @@ proc random_y_pos
 	INT 1Ah
 	mov dh,0
 	mov ax,dx
-	mov cx,SQUARE_HEIGHT
+	mov cl,SQUARE_HEIGHT
 	div cl
 	sub dl,ah
-	add dx,25
 	mov dh,0
 	mov [random_y],dx
+	add [random_y], 25
+	;return random num in random_y var
 ret
 endp random_y_pos
 
 proc check_x_and_random_y
-	cmp [random_x],5
-	jg skip_x_to_low
-	mov [random_x],10
-	skip_x_to_low:
-	cmp [random_x],300
-	jl skip_x_to_high
-	mov [random_x],270
-	skip_x_to_high:
-	cmp [random_y],5
-	jg skip_y_to_low
-	mov [random_y],10
-	skip_y_to_low:
-	cmp [random_y],190
-	jl skip_y_to_high
-	mov [random_y],185
-	skip_y_to_high:
+	x_or_y_isnt_vaild:
+		;cmp [random_x],0
+		;jg skip_x_to_low
+		;call random_x_pos
+		;jmp x_or_y_isnt_vaild
+		
+		skip_x_to_low:
+		cmp [random_x],315
+		jl skip_x_to_high
+		add [random_x], 100
+		jmp x_or_y_isnt_vaild
+		
+		skip_x_to_high:
+		;cmp [random_y],20
+		;jg skip_y_to_low
+		;call random_y_pos
+		;jmp x_or_y_isnt_vaild
+		
+		skip_y_to_low:
+		cmp [random_y],195
+		jl skip_y_to_high
+		sub [random_y], 100
+		jmp x_or_y_isnt_vaild
+
+		skip_y_to_high:
 ret
 endp check_x_and_random_y
 
@@ -422,15 +462,15 @@ endp erase_square
 
 proc make_lines
 	push [line_length]
-	;----------- print horizental dwon line
+	;----------- print horizental up line
 	mov [line_length],320
 
 	push 0
-	push 0
+	push 20
 	push WHITE
 
 	call print_square
-	;----------- print horizental up line
+	;----------- print horizental down line
 	push 0
 	mov ax,200
 	sub ax,SQUARE_HEIGHT
@@ -446,13 +486,13 @@ proc make_lines
 	mov ax,320
 	sub ax,SQUARE_LINE_LENGTH
 	push ax
-	push 0
-	mov [highet],200
+	push 20
+	mov [highet],180
 	push WHITE
 	call print_square
 	;----------- print vertical left line
 	push 0
-	push 0
+	push 20
 	push WHITE
 	call print_square
 
@@ -972,6 +1012,8 @@ start:
 	call open_screen
 	call SetGraphic
 	call make_lines
+	call new_line
+
 	call generate_apple
 	cmp [is_want_2_players],TRUE
 	jne skip_2_apples
@@ -985,6 +1027,7 @@ start:
 		
 		pop cx
 		loop sleep_for_apples_gap
+		
 	
 	call generate_apple
 	skip_2_apples:
