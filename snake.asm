@@ -75,14 +75,21 @@ DOWN_DIRECTION equ 1
 LEFT_DIRECTION equ 2
 RIGHT_DIRECTION equ 3
 
+
+special_apples db "********************SPECIAL APPLES********************$"
 STRING_REGULAR_APPLE db "Red apple - Regular Apple$"
 STRING_FAST_APPLE db "Yellow apple - Change the speed of your snake$"
 STRING_TRIPPLE_APPLE db "Cayen apple - Tripple score apple$"
 STRING_CONFUSE_APPLE db "Pink apple - Switch betwen left and right$"
 
-first_plyer_rules db "First player move with w - up, s - down, a - left, d - right.$"
-second_plyer_rules db "Second player move with the arrows.$"
+movment db "********************MOVMENT********************$"
+first_player_movment db "First player move with w - up, s - down, a - left, d - right.$"
+second_player_movment db "Second player move with the arrows.$"
 
+rules db "********************RULES********************$"
+dont_tuch_lines db "You can't tuch the lines.$"
+dont_tuch_snake db "You can't tuch snakes (you or other player).$"
+eat_apple_rule db "When you eat an apple you get bigger.$"
 
 LEN_REGULAR_APPLE_STRING equ 25
 LEN_TRIPPLE_APPLE_STRING equ 33
@@ -854,8 +861,19 @@ proc new_line
 endp new_line
 
 proc open_screen
+	
+	call new_line
+	call new_line
+	
+	mov ax, offset rules
+	mov bl,GREEN
+	mov cx,45
+	call print_with_color
 
-	mov dx, offset first_plyer_rules
+	call new_line
+	call new_line
+	
+	mov dx, offset eat_apple_rule
 	mov ah, 9H
 	int 21H 
 	mov al,1
@@ -863,11 +881,53 @@ proc open_screen
 	call new_line
 	
 	
-	mov dx, offset second_plyer_rules
+	mov dx, offset dont_tuch_snake
 	mov ah, 9H
 	int 21H 
 	mov al,1
 	
+	call new_line
+	
+	
+	mov dx, offset dont_tuch_lines
+	mov ah, 9H
+	int 21H 
+	mov al,1
+	
+	call new_line
+	call new_line
+	
+	mov ax, offset movment
+	mov bl,GREEN
+	mov cx,47
+	call print_with_color
+
+	call new_line
+	call new_line
+	
+
+	mov dx, offset first_player_movment
+	mov ah, 9H
+	int 21H 
+	mov al,1
+	
+	call new_line
+	
+	
+	mov dx, offset second_player_movment
+	mov ah, 9H
+	int 21H 
+	mov al,1
+	
+	call new_line
+	call new_line
+	
+	mov ax, offset special_apples
+	mov bl,GREEN
+	mov cx, 54
+	call print_with_color
+	
+	call new_line
 	call new_line
 	
 	mov ax,offset STRING_REGULAR_APPLE
@@ -897,6 +957,8 @@ proc open_screen
 	call print_with_color
 
 	call new_line
+	call new_line
+
 
 	;get input from user to know how many players are playing
 	how_much_players_input_loop:
