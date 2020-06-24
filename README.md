@@ -2,9 +2,9 @@
 
 a snake in 80 x 86 assembly, running on DosBox.
 
-##IMAGES
+## IMAGES
 ![game](/screenshots/game_running_screenshot.png)
 ![tutorial](/screenshots/tutorial_screenshot.png)
 
 ## VIDEO
-[youtube video of the game running](https://www.youtube.com/watch?v=zWmlHsbAWhY )
+[Youtube video of the game running](https://www.youtube.com/watch?v=zWmlHsbAWhY )
