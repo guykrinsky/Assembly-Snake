@@ -75,6 +75,8 @@ DOWN_DIRECTION equ 1
 LEFT_DIRECTION equ 2
 RIGHT_DIRECTION equ 3
 
+start_message db "Welcome to the best game ever!$"
+how_many_players_are_playing db  "Enter how many players are playing? (1/2)$"
 
 special_apples db "********************SPECIAL APPLES********************$"
 STRING_REGULAR_APPLE db "Red apple - Regular Apple$"
@@ -87,9 +89,11 @@ first_player_movment db "First player move with w - up, s - down, a - left, d - 
 second_player_movment db "Second player move with the arrows.$"
 
 rules db "********************RULES********************$"
-dont_tuch_lines db "You can't tuch the lines.$"
-dont_tuch_snake db "You can't tuch snakes (you or other player).$"
+dont_touch_lines db "You can't touch the lines.$"
+dont_touch_snake db "You can't touch snakes (yourself or the other player).$"
 eat_apple_rule db "When you eat an apple you get bigger.$"
+two_players_rule db "Two playres mode - Play together, you are a part of a team! $"
+
 
 LEN_REGULAR_APPLE_STRING equ 25
 LEN_TRIPPLE_APPLE_STRING equ 33
@@ -107,7 +111,6 @@ snake2_current_direction dw UP_DIRECTION
 left_onKeyboard db LEFT_KEYBOARD
 right_onKeyboard db RIGHT_KEYBOARD
 
-start_message db 'Welcome to the best game ever! Enter how many players are playing? (1/2)$'
 
 CODESEG
 
@@ -861,108 +864,109 @@ proc new_line
 endp new_line
 
 proc open_screen
-	
 	call new_line
+	
+	mov ax, offset start_message
+	mov bl, CAYEN
+	mov cx,30
+	call print_with_color
+	call new_line
+	
 	call new_line
 	
 	mov ax, offset rules
 	mov bl,GREEN
 	mov cx,45
 	call print_with_color
-
 	call new_line
+	
 	call new_line
 	
 	mov dx, offset eat_apple_rule
 	mov ah, 9H
 	int 21H 
 	mov al,1
-	
 	call new_line
 	
-	
-	mov dx, offset dont_tuch_snake
+	mov dx, offset dont_touch_snake
 	mov ah, 9H
 	int 21H 
 	mov al,1
-	
 	call new_line
 	
-	
-	mov dx, offset dont_tuch_lines
+	mov dx, offset dont_touch_lines
 	mov ah, 9H
 	int 21H 
 	mov al,1
-	
 	call new_line
+	
+	mov dx, offset two_players_rule
+	mov ah, 9H
+	int 21H
+	mov al, 1
+	call new_line
+	
 	call new_line
 	
 	mov ax, offset movment
 	mov bl,GREEN
 	mov cx,47
 	call print_with_color
-
-	call new_line
 	call new_line
 	
-
+	call new_line
+	
 	mov dx, offset first_player_movment
 	mov ah, 9H
 	int 21H 
 	mov al,1
-	
 	call new_line
-	
 	
 	mov dx, offset second_player_movment
 	mov ah, 9H
 	int 21H 
 	mov al,1
-	
 	call new_line
+	
 	call new_line
 	
 	mov ax, offset special_apples
 	mov bl,GREEN
 	mov cx, 54
 	call print_with_color
-	
 	call new_line
+	
 	call new_line
 	
 	mov ax,offset STRING_REGULAR_APPLE
 	mov bl,RED
 	mov cx,LEN_REGULAR_APPLE_STRING
 	call print_with_color
-
 	call new_line
 
 	mov ax,offset STRING_FAST_APPLE
 	mov bl,YELLOW
 	mov cx,LEN_FAST_APPLE_STRING
 	call print_with_color
-
 	call new_line
 
 	mov ax,offset STRING_TRIPPLE_APPLE
 	mov bl,CAYEN
 	mov cx,LEN_TRIPPLE_APPLE_STRING
 	call print_with_color
-
 	call new_line
 
 	mov ax,offset STRING_CONFUSE_APPLE
 	mov bl,MAGNETA
 	mov cx,LEN_CONFUSE_APPLE_STRING
 	call print_with_color
-
 	call new_line
+	
 	call new_line
-
 
 	;get input from user to know how many players are playing
 	how_much_players_input_loop:
-		mov dx, offset start_message
+		mov dx, offset how_many_players_are_playing
 		mov ah, 9h
 		Int 21h
 
@@ -971,7 +975,7 @@ proc open_screen
 		; getting user input.
 		mov ah, 1h
 		int 21h
-		sub al,031h
+		sub al,31h
 		
 		push ax
 		call new_line
@@ -980,6 +984,8 @@ proc open_screen
 		;Check if input is valid (1/2)
 		cmp al,TRUE
 		jg how_much_players_input_loop
+		cmp al,FALSE
+		jl how_much_players_input_loop
 		
 	mov [is_want_2_players],al
 	ret
