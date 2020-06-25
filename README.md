@@ -1,6 +1,8 @@
 # Regular SNAKE game for two or one players. 
 
-a snake in 80 x 86 assembly, running on DosBox.
+## A snake Game in 80 x 86 assembly, running on DosBox.
+
+The snake get special powers when eating  different apples.
 
 ## IMAGES
 ![game](/screenshots/game_running_screenshot.png)
